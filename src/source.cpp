@@ -1,3 +1,9 @@
+/* Picross Solver
+ * Solves picross/nonogram puzzles based on the numbers signifying blocks in
+ * rows and columns.
+ * Author: Caleb Geyer (http://www.github.com/gaiablade/)
+ *   Date: February 8th, 2020
+ */
 #include <iostream>
 #include <vector>
 #include <set>
