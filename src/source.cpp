@@ -80,7 +80,6 @@ void solvePicross(unsigned int width, unsigned int height, unsigned int** picros
     };
 
     auto checkCompletedRC = [&](unsigned char crs) {
-        // crs = 0: columns, crs = 1: rows
         const unsigned int wh = (crs) ? height : width;
         const std::vector<unsigned int>* crv = (crs) ? &rows[0] : &columns[0];
         std::set<unsigned int>& s = (crs) ? unFilledRows : unFilledColumns;
@@ -91,14 +90,12 @@ void solvePicross(unsigned int width, unsigned int height, unsigned int** picros
             if (actualSum == expectedSum) {
                 // set unfilled squares to 0 (X)
                 if (crs) { // rows
-                    for (int i = 0; i < wh; i++) {
+                    for (int i = 0; i < wh; i++)
                         if (!picross[*cr][i]) picross[*cr][i] = 2;
-                    }
                 }
                 else {
-                    for (int i = 0; i < wh; i++) {
+                    for (int i = 0; i < wh; i++)
                         if (!picross[i][*cr]) picross[i][*cr] = 2;
-                    }
                 }
                 s.erase(cr);
                 if (!s.empty()) cr = s.begin();
@@ -106,8 +103,7 @@ void solvePicross(unsigned int width, unsigned int height, unsigned int** picros
         }
     };
 
-    auto treadRC = [&](unsigned int crs, const std::vector<unsigned int>& vec, unsigned int cr, unsigned int length) {
-        std::vector<unsigned int> copied = vec;
+    auto treadRC = [&](unsigned int crs, std::vector<unsigned int> vec, unsigned int cr, unsigned int length) {
         unsigned int* address = (crs ? &picross[cr][0] : &picross[0][cr]); // first
         unsigned int* address2 = (crs ? &picross[cr][length - 1] : &picross[length - 1][cr]); // last
         if (*address == 1) {
@@ -117,11 +113,11 @@ void solvePicross(unsigned int width, unsigned int height, unsigned int** picros
             }
         }
         else if (*address2 == 1) {
-            for (int i = length - 1; i > length - 1 - copied.back(); i--) {
+            for (int i = length - 1; i > length - 1 - vec.back(); i--) {
                 address = (crs ? &picross[cr][i] : &picross[i][cr]);
                 *address = 1;
             }
-            copied.pop_back();
+            vec.pop_back();
         }
         for (int i = length - 1; i >= 0; i--) {
             unsigned int* address3 = (crs ? &picross[cr][i] : &picross[i][cr]);
@@ -132,30 +128,22 @@ void solvePicross(unsigned int width, unsigned int height, unsigned int** picros
             unsigned int* address4 = (crs ? &picross[cr][i + 1] : &picross[i + 1][cr]);
             unsigned int* address5 = (crs ? &picross[cr][i - 1] : &picross[i - 1][cr]);
             if (i + 1 < length && *address4 == 2) {
-                for (int j = 0; j < copied.back(); j++) {
+                for (int j = 0; j < vec.back(); j++) {
                     address3 = (crs ? &picross[cr][i] : &picross[i][cr]);
                     *address3 = 1;
                     i--;
                 }
-                copied.pop_back();
+                vec.pop_back();
             }
             else if (i + 1 < length && (i - 1) >= 0 && *address5 == 2 && *address4 == 0) {
                 int returnVal = i;
-                for (int j = 0; j < copied.back(); j++) {
+                for (int j = 0; j < vec.back(); j++) {
                     address3 = (crs ? &picross[cr][i] : &picross[i][cr]);
                     *address3 = 1;
                     i++;
                 }
-                copied.pop_back();
+                vec.pop_back();
                 i = returnVal;
-            }
-        }
-    };
-
-    auto treadRow = [&](const std::vector<unsigned int>& vec, unsigned int row, unsigned int length) {
-        if (picross[0][row] == 1) {
-            for (int i = 1; i < vec[0] - 1; i++) {
-                picross[i][row] = 1;
             }
         }
     };
@@ -165,12 +153,10 @@ void solvePicross(unsigned int width, unsigned int height, unsigned int** picros
     checkCompletedRC(0);
     checkCompletedRC(1);
     while (!isSolved()) {
-        for (auto i = unFilledColumns.begin(); i != unFilledColumns.end(); i++) {
+        for (auto i = unFilledColumns.begin(); i != unFilledColumns.end(); i++)
             treadRC(0, columns[*i], *i, width);
-        }
-        for (auto i = unFilledRows.begin(); i != unFilledRows.end(); i++) {
+        for (auto i = unFilledRows.begin(); i != unFilledRows.end(); i++)
             treadRC(1, rows[*i], *i, width);
-        }
         checkCompletedRC(0);
         checkCompletedRC(1);
     }
