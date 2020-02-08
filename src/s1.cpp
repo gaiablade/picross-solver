@@ -18,6 +18,16 @@ void solvePicross(unsigned int width, unsigned int height, unsigned int** picros
         }
     };
 
+    auto printVector = [](const std::vector<unsigned int>& vec) {
+        for (auto& v : vec) std::cout << v << " ";
+        std::cout << std::endl;
+    };
+
+    auto printSet = [](const std::set<unsigned int>& s) {
+        for (auto& i : s) std::cout << i << " ";
+        std::cout << std::endl;
+    };
+
     auto sumRC = [&](const std::vector<unsigned int>& vec) {
         unsigned int sum = 0;
         for (auto& u : vec) sum += u;
@@ -108,48 +118,41 @@ void solvePicross(unsigned int width, unsigned int height, unsigned int** picros
 
     auto treadRC = [&](unsigned int crs, const std::vector<unsigned int>& vec, unsigned int cr, unsigned int length) {
         std::vector<unsigned int> copied = vec;
-        unsigned int* address = (crs ? &picross[cr][0] : &picross[0][cr]); // first
-        unsigned int* address2 = (crs ? &picross[cr][length - 1] : &picross[length - 1][cr]); // last
+        unsigned int* address = (crs ? &picross[cr][0] : &picross[0][cr]);
+        unsigned int* address2 = (crs ? &picross[cr][length - 1] : &picross[length - 1][cr]);
         if (*address == 1) {
             for (int i = 1; i < vec[0] - 1; i++) {
-                address = (crs ? &picross[cr][i] : &picross[i][cr]);
                 *address = 1;
             }
         }
         else if (*address2 == 1) {
-            for (int i = length - 1; i > length - 1 - copied.back(); i--) {
-                address = (crs ? &picross[cr][i] : &picross[i][cr]);
+            for (int i = length - 1; i >= length - 1 - vec.back(); i--) {
                 *address = 1;
             }
-            copied.pop_back();
         }
+        /*
         for (int i = length - 1; i >= 0; i--) {
-            unsigned int* address3 = (crs ? &picross[cr][i] : &picross[i][cr]);
-            while (*address3 != 1 && i) {
+            while (picross[i][column] != 1 && i) {
                 i--;
-                address3 = (crs ? &picross[cr][i] : &picross[i][cr]);
             }
-            unsigned int* address4 = (crs ? &picross[cr][i + 1] : &picross[i + 1][cr]);
-            unsigned int* address5 = (crs ? &picross[cr][i - 1] : &picross[i - 1][cr]);
-            if (i + 1 < length && *address4 == 2) {
+            if (i + 1 < length && picross[i + 1][column] == 2) {
                 for (int j = 0; j < copied.back(); j++) {
-                    address3 = (crs ? &picross[cr][i] : &picross[i][cr]);
-                    *address3 = 1;
+                    picross[i][column] = 1;
                     i--;
                 }
                 copied.pop_back();
             }
-            else if (i + 1 < length && (i - 1) >= 0 && *address5 == 2 && *address4 == 0) {
+            else if (i + 1 < length && (i - 1) >= 0 && picross[i - 1][column] == 2 && picross[i + 1][column] == 0) {
                 int returnVal = i;
                 for (int j = 0; j < copied.back(); j++) {
-                    address3 = (crs ? &picross[cr][i] : &picross[i][cr]);
-                    *address3 = 1;
+                    picross[i][column] = 1;
                     i++;
                 }
                 copied.pop_back();
                 i = returnVal;
             }
         }
+        */
     };
 
     auto treadRow = [&](const std::vector<unsigned int>& vec, unsigned int row, unsigned int length) {
