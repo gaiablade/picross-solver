@@ -9,8 +9,7 @@
 #include <set>
 #include <iterator>
 #include <fstream>
-
-typedef unsigned char byte;
+#include "Bitmap.h"
 
 void solvePicross(unsigned int width, unsigned int height, unsigned int** picross, std::vector<unsigned int> rows[5], std::vector<unsigned int> columns[5]) {
 
@@ -25,6 +24,7 @@ void solvePicross(unsigned int width, unsigned int height, unsigned int** picros
                 std::cout << picross[column][row] << " ";
             std::cout << std::endl;
         }
+        std::cout << std::endl;
     };
 
     auto printVector = [](const std::vector<unsigned int>& vec) {
@@ -75,7 +75,17 @@ void solvePicross(unsigned int width, unsigned int height, unsigned int** picros
             // If the sum of the row/column (e.g. {2, 2} = 2 + 1(gap) + 2 = 5)
             // equals the width/height, there is only one solution to that
             // row/column:
-            if (sum == wh) {
+            if (sum == 0) {
+                for (int i = 0; i < wh; i++) {
+                    if (crs) {
+                        picross[cr][i] = 2;
+                    }
+                    else {
+                        picross[i][cr] = 2;
+                    }
+                }
+            }
+            else if (sum == wh) {
                 std::vector<uint8_t> guarenteedLayout;
                 for (int i = 0; i < crv[cr].size(); i++) {
                     for (int j = 0; j < crv[cr][i]; j++) {
@@ -188,6 +198,7 @@ void solvePicross(unsigned int width, unsigned int height, unsigned int** picros
     };
 
     auto treadRC = [&](unsigned int crs, std::vector<unsigned int> vec, unsigned int cr, unsigned int length) {
+        //printVector(vec);
         unsigned int* firstTile  = crs ? &picross[cr][0]          : &picross[0][cr]; // first
         unsigned int* lastTile   = crs ? &picross[cr][length - 1] : &picross[length - 1][cr]; // last
         unsigned int* secondTile = crs ? &picross[cr][1]          : &picross[1][cr];
@@ -280,6 +291,29 @@ void solvePicross(unsigned int width, unsigned int height, unsigned int** picros
                 iterator = crs ? &picross[cr][number] : &picross[number][cr];
             }
         }
+
+        int iterator = 0;
+        while (iterator < length && *(crs ? &picross[cr][iterator] : &picross[iterator][cr]) != 1) {
+            iterator++;
+        }
+        int iterator2 = iterator;
+        while (iterator2 < length && *(crs ? &picross[cr][iterator2] : &picross[iterator2][cr]) == 1) {
+            iterator2++;
+        }
+        if (iterator > 0 && iterator < length && iterator2 < length && *(crs ? &picross[cr][iterator2] : &picross[iterator2][cr]) == 0) {
+            if ((crs ? picross[cr][iterator - 1] : picross[iterator - 1][cr]) == 2) {
+                int i;
+                for (i = 0; i < vec[0]; i++) {
+                    if (crs) {
+                        picross[cr][iterator + i] = 1;
+                    }
+                    else {
+                        picross[iterator + i][cr] = 1;
+                    }
+                }
+                (crs ? picross[cr][iterator + i] : picross[iterator + i][cr]) = 2;
+            }
+        }
     };
 
     firstSweep(0); // columns
@@ -302,44 +336,6 @@ void solvePicross(unsigned int width, unsigned int height, unsigned int** picros
     checkCompletedRC(0);
     checkCompletedRC(1);
     printPicross();
-}
-
-bool picrossToBmp(const unsigned int width, const unsigned int height, unsigned int** picross, const char* filename) {
-    std::ofstream image(filename, std::ofstream::binary);
-    if (image.fail()) return false;
-
-    // Generate header:
-    int address = 0x7a, sizeOfHeader = 0x6c, paddingPerRow = 4 - ((width * 3) % 4);
-    int imageSize = 3 * (width * height) + (height * paddingPerRow), resolution = 0xb13;
-    int fileSize = address + imageSize;
-    short colorPlanes = 1, bitsPerPixel = 24;
-    image.write("BM", 2 * sizeof(byte)); // header field 0x00
-    image.write((const char*)&fileSize, 4 * sizeof(byte)); // PLACEHOLDER: total size of file in bytes
-    image.write("\0\0\0\0", 4 * sizeof(byte)); // Reserved
-    image.write((const char*)&address, 4 * sizeof(byte)); // Address of pixel data
-    image.write((const char*)&sizeOfHeader, 4 * sizeof(byte)); // Size of header in bytes 0x0E
-    image.write((const char*)&width, 4 * sizeof(byte)); // 0x12
-    image.write((const char*)&height, 4 * sizeof(byte)); // 0x16
-    image.write((const char*)&colorPlanes, 2 * sizeof(byte)); // Number of color planes (must be 1) 0x1A
-    image.write((const char*)&bitsPerPixel, 2 * sizeof(byte)); // 0x1C
-    image.write("\0\0\0\0", 4); // compression method none 0x1E
-    image.write((const char*)&imageSize, 4); // image size: 0x22
-    image.write((const char*)&resolution, 4); // horizontal resolution 0x26
-    image.write((const char*)&resolution, 4); // vertical resolution 0x2A
-    image.write("\0\0\0\0", 4); // num colors in pallete 0x2E
-    image.write("\0\0\0\0", 4); // num of important colors 0x32
-    for (int i = 0; i < 68; i++) image.write("\0", 1 * sizeof(byte));
-
-    // Pixel array: black if 1, white otherwise
-    for (int i = height - 1; i >= 0; i--) {
-        for (int j = 0; j < width; j++) {
-            if (picross[i][j] == 1) image.write("\0\0\0", 3);
-            else image.write("\xff\xff\xff", 3);
-        }
-        for (int k = 0; k < paddingPerRow; k++) {
-            image.write("\0", 1);
-        }
-    }
 }
 
 int main() {
@@ -368,7 +364,7 @@ int main() {
     columns[4] = {3};
 
     solvePicross(5, 5, &picross[0], rows, columns);
-    picrossToBmp(5, 5, &picross[0], "output1.bmp");
+    bm::Array2dToBMP(&picross[0], 5, 5, "output1.bmp");
 
     for (int i = 0; i < 5; i++)
         for (int j = 0; j < 5; j++)
@@ -387,7 +383,65 @@ int main() {
     columns[4] = {4};
 
     solvePicross(5, 5, &picross[0], rows, columns);
-    picrossToBmp(5, 5, &picross[0], "output2.bmp");
+    bm::Array2dToBMP(&picross[0], 5, 5, "output2.bmp");
+
+    for (int i = 0; i < 5; i++)
+        for (int j = 0; j < 5; j++)
+            picross[i][j] = 0;
+
+    rows[0] = {2};
+    rows[1] = {2, 1};
+    rows[2] = {1};
+    rows[3] = {1, 1};
+    rows[4] = {1, 1};
+
+    columns[0] = {0};
+    columns[1] = {2, 2};
+    columns[2] = {2};
+    columns[3] = {1, 1};
+    columns[4] = {1, 1};
+
+    solvePicross(5, 5, &picross[0], rows, columns);
+    bm::Array2dToBMP(&picross[0], 5, 5, "output3.bmp");
+
+    for (int i = 0; i < 5; i++)
+        for (int j = 0; j < 5; j++)
+            picross[i][j] = 0;
+
+    rows[0] = {1, 3};
+    rows[1] = {1, 1};
+    rows[2] = {2, 1};
+    rows[3] = {2, 1};
+    rows[4] = {3, 1};
+
+    columns[0] = {3, 1};
+    columns[1] = {3};
+    columns[2] = {1, 2};
+    columns[3] = {1};
+    columns[4] = {5};
+
+    solvePicross(5, 5, &picross[0], rows, columns);
+    bm::Array2dToBMP(&picross[0], 5, 5, "output4.bmp");
+
+    for (int i = 0; i < 5; i++)
+        for (int j = 0; j < 5; j++)
+            picross[i][j] = 0;
+
+    rows[0] = {2, 2};
+    rows[1] = {1, 2};
+    rows[2] = {1, 1};
+    rows[3] = {4};
+    rows[4] = {2, 1};
+
+    columns[0] = {5};
+    columns[1] = {1, 2};
+    columns[2] = {1, 1};
+    columns[3] = {5};
+    columns[4] = {1};
+
+    solvePicross(5, 5, &picross[0], rows, columns);
+    //picrossToBmp(5, 5, &picross[0], "output5.bmp");
+    bm::Array2dToBMP(&picross[0], 5, 5, "output5.bmp");
 
     for (int i = 0; i < 5; i++)
         delete[] picross[i];
